@@ -5,15 +5,24 @@
 #
 # The full license is in the file LICENSE, distributed with this software.
 #------------------------------------------------------------------------------
+import os
 import sys
 import inspect
 from setuptools import Extension, setup
 from setuptools.command.install import install
 from setuptools.command.develop import develop
 
-from cppy import CppyBuildExt
+try:
+    from cppy import CppyBuildExt
+except ImportError as e:
+    raise RuntimeError(
+        "Missing setup required dependencies: cppy. "
+        "Installing through pip as recommended ensure one never hits this issue."
+    ) from e
 
 # Use the env var ENAML_DISABLE_FH4 to disable linking against VCRUNTIME140_1.dll
+if "ENAML_DISABLE_FH4" in os.environ:
+    os.environ.setdefault("CPPY_DISABLE_FH4", "1")
 
 ext_modules = [
     Extension(
@@ -116,7 +125,20 @@ class Develop(develop):
 
 setup(
     ext_modules=ext_modules,
-    cmdclass={'build_ext': CppyBuildExt,
-              'install': Install,
-              'develop': Develop},
+    cmdclass={
+        'build_ext': CppyBuildExt,
+        'install': Install,
+        'develop': Develop,
+    },
+    package_data={
+        'enaml.applib': ['*.enaml'],
+        'enaml.stdlib': ['*.enaml'],
+        'enaml.workbench.core': ['*.enaml'],
+        'enaml.workbench.ui': ['*.enaml'],
+        'enaml.qt.docking': [
+            'dock_images/*.png',
+            'dock_images/*.py',
+            'enaml_dock_resources.qrc'
+        ],
+    },
 )
